@@ -32,21 +32,8 @@ bool HaMqtt::setDeviceAvailability(bool available) {
     #ifdef DEBUG
         Serial.print(F("set device avaibable to: "));
         Serial.println(status);
-        Serial.print(F("topic: "));
-        Serial.println(topic);
-        Serial.print(F("rewquest result:"));
     #endif
-    if(this->_mqttClient.publish(topic.c_str(), status, true)){
-        #ifdef DEBUG
-            Serial.println(F(" OK"));
-        #endif
-        return true;
-    }else{
-        #ifdef DEBUG
-            Serial.println(F(" faild"));
-        #endif
-        return false;
-    }
+    return this->mqttPublish(topic,status);
 }
 int HaMqtt::getSensorID(const char* unique_id){
     for (int sensorID=0;sensorID<MAX_SENSORS;sensorID++){
@@ -55,7 +42,7 @@ int HaMqtt::getSensorID(const char* unique_id){
         }
     }
     #ifdef DEBUG
-        Serial.print(F("HA sendor not found:"));
+        Serial.print(F("HA Sensor not found:"));
         Serial.println(unique_id);
     #endif
     return -1;
@@ -65,25 +52,12 @@ bool HaMqtt::setSensorAvailability(int sensorID,bool available){
     String topic=this->_deviceInfos.ids+ "/"+this->_sensors[sensorID].unique_id+"/status";
     const char* status = available ? "online" : "offline";
     #ifdef DEBUG
-        Serial.print(F("set sensor "));
+        Serial.print(F("set Sensor "));
         Serial.print(this->_sensors[sensorID].unique_id);
         Serial.print(F(" avaibable to: "));
         Serial.println(status);
-        Serial.print(F("topic: "));
-        Serial.println(topic);
-        Serial.print(F("rewquest result:"));
     #endif
-    if(this->_mqttClient.publish(topic.c_str(), status, true)){
-        #ifdef DEBUG
-            Serial.println(F(" OK"));
-        #endif
-        return true;
-    }else{
-        #ifdef DEBUG
-            Serial.println(F(" faild"));
-        #endif
-        return false;
-    }
+    return this->mqttPublish(topic,status);
 }
 bool HaMqtt::setSensorAvailability(const char* unique_id,bool available){
     int sensorID=this->getSensorID(unique_id);
@@ -118,17 +92,19 @@ bool HaMqtt::mqttConnect() {
 void HaMqtt::mqttDisconnect(){
   if (this->_mqttClient.state()!=MQTT_CONNECTED) return;
     #ifdef DEBUG
-      Serial.println(F("stop mqtt server"));
+      Serial.println(F("Stop Mqtt server"));
     #endif
     this->_mqttClient.disconnect();
 };
-void HaMqtt::deleteHASensor(int sensor_id){
-    if (sensor_id <0 || sensor_id>MAX_SENSORS){return;}
+void HaMqtt::deleteHASensor(int sensorID){
+    if (sensorID <0 || sensorID>MAX_SENSORS){return;}
     #ifdef DEBUG
-        Serial.print(F("delete HA sensor"));
-        Serial.print(this->_sensors[sensor_id].unique_id);
+        Serial.print(F("Delete HA Sensor"));
+        Serial.print(this->_sensors[sensorID].unique_id);
     #endif
-    this->_sensors[sensor_id].unique_id = nullptr;
+    String topic=String(HA_DISCOVERY_PREFIX)+"/"+String(this->_sensors[sensorID].components)+"/"+this->_deviceInfos.ids+"/"+this->_sensors[sensorID].unique_id+"/config";
+    this->mqttPublish(topic,"");
+    this->_sensors[sensorID].unique_id = nullptr;
     return;
 }
 void HaMqtt::deleteHASensor(const char* unique_id){
@@ -137,19 +113,20 @@ void HaMqtt::deleteHASensor(const char* unique_id){
     this->deleteHASensor(sensor_id);
 }
 int HaMqtt::addHASensor(HASensor sensor){
-    for (int i = 0; i < MAX_SENSORS; i++) {
-        if (this->_sensors[i].unique_id == nullptr || this->_sensors[i].unique_id[0] == '\0'){ // free array found
+    for (int sensorID = 0; sensorID < MAX_SENSORS; sensorID++) {
+        if (this->_sensors[sensorID].unique_id == nullptr || this->_sensors[sensorID].unique_id[0] == '\0'){ // free array found
             if (sensor.components == nullptr) {sensor.components=HA_COMPONENT_SENSOR;}
-            this->_sensors[i] = sensor;
+            this->_sensors[sensorID] = sensor;
             #ifdef DEBUG
-                Serial.print(F("add HA sensor: "));
-                Serial.print(this->_sensors[i].unique_id);
-                Serial.print(F(" name: "));
-                Serial.print(this->_sensors[i].name);
+                Serial.print(F("Add HA Sensor: "));
+                Serial.print(this->_sensors[sensorID].unique_id);
+                Serial.print(F(" Name: "));
+                Serial.print(this->_sensors[sensorID].name);
                 Serial.print(F(" HASensorID: "));
-                Serial.println(i);
+                Serial.println(sensorID);
             #endif
-            return i; // succes
+            this->publishSensor(sensorID);
+            return sensorID; // success
         }
     }
     return -1; // Array full
@@ -173,7 +150,7 @@ void HaMqtt::addHADevice(const HADevice& device){
         this->_deviceInfos.connections[i].value = device.connections[i].value;
     }
     #ifdef DEBUG
-        Serial.print(F("add ha device: "));
+        Serial.print(F("Add HA Device: "));
         Serial.print(this->_deviceInfos.ids);
         Serial.print(F(" : "));
         Serial.println(this->_deviceInfos.name);
@@ -198,25 +175,10 @@ bool HaMqtt::updateSensorValue(int sensorID,const char* value){
     if (sensorID < 0 || sensorID > MAX_SENSORS) {return false;}
     String topic=this->_deviceInfos.ids+ "/"+this->_sensors[sensorID].unique_id+"/data";
     #ifdef DEBUG
-        Serial.print(F("set value for sensor "));
+        Serial.print(F("Set value for Sensor "));
         Serial.println(this->_sensors[sensorID].unique_id);
-        Serial.print(F("Topic: "));
-        Serial.println(topic);
-        Serial.print(" paylod: ");
-        Serial.println(value);
-        Serial.print("result: ");
     #endif
-    if(this->_mqttClient.publish(topic.c_str(),value, true)){
-        #ifdef DEBUG
-            Serial.println(F(" OK"));
-        #endif
-        return true;
-    }else{
-        #ifdef DEBUG
-            Serial.println(F(" faild"));
-        #endif
-        return false;
-    }
+    return this->mqttPublish(topic,value);
 }
 bool HaMqtt::updateSensorValue(int sensorID,int value){
     std::string svalue = std::to_string(value);
@@ -239,9 +201,9 @@ void HaMqtt::begin(String deviceIdentifier,String deviceName){
     this->_deviceInfos.name=deviceName;
     #ifdef DEBUG
         Serial.println(F("HaMQTT begin"));
-        Serial.print(F("device ID: "));
+        Serial.print(F("Device ID: "));
         Serial.print(this->_deviceInfos.ids);
-        Serial.print(F(" name: "));
+        Serial.print(F(" Name: "));
         Serial.println(this->_deviceInfos.name);  
     #endif
     this->startup=true;
@@ -249,7 +211,7 @@ void HaMqtt::begin(String deviceIdentifier,String deviceName){
 void HaMqtt::loop(){
     #ifdef DEBUG
         if (strcmp(this->_lastMQTTStatus,this->MQTTStateString(this->_mqttClient.state()))){  
-            Serial.print(F("mqtt status change from: "));
+            Serial.print(F("Mqtt status change from: "));
             Serial.print(this->_lastMQTTStatus);
             Serial.print(F(" to: "));
             this->_lastMQTTStatus=this->MQTTStateString(this->_mqttClient.state());
@@ -264,44 +226,11 @@ void HaMqtt::loop(){
                     #ifdef DEBUG
                         Serial.println(F("MQTT connected successfully"));
                     #endif
+                    this->_mqttConnected=true;
+                    this->publishAllSensor();
                     this->setDeviceAvailability(true);
-                    for (int sensorID=0;sensorID<MAX_SENSORS;sensorID++){
-                        if (this->_sensors[sensorID].unique_id != nullptr) {
-                            #ifdef DEBUG
-                                Serial.print(F("publish sensor: "));
-                                Serial.print(this->_sensors[sensorID].unique_id);
-                                Serial.print(F(" : "));
-                                Serial.println(this->_sensors[sensorID].name);
-                            #endif
-                            
-                            JsonDocument doc;
-                            this->getSensorConfig(doc,sensorID);
-                            String topic=String(HA_DISCOVERY_PREFIX)+"/"+String(this->_sensors[sensorID].components)+"/"+this->_deviceInfos.ids+"/"+this->_sensors[sensorID].unique_id+"/config";
-                            String paylod;
-                            #ifdef DEBUG
-                                String mqttString=topic+paylod;
-                                
-                            #endif
-                            serializeJson(doc, paylod);
-                            #ifdef DEBUG
-                                Serial.print(F("topic:"));
-                                Serial.println(topic);
-                                Serial.print(F("payload:"));
-                                Serial.println(paylod);
-                                Serial.print(F("result: "));
-                            #endif
-                            if (this->_mqttClient.publish(topic.c_str(), paylod.c_str(), true)){
-                                #ifdef DEBUG
-                                    Serial.println(F("OK"));
-                                #endif
-                            }else{
-                                #ifdef DEBUG
-                                    Serial.println(F("FAILD"));
-                                #endif
-                            }
-                        }
-                    }
                 } else {
+                    this->_mqttConnected=false;
                     #ifdef DEBUG
                         Serial.println(F("MQTT connection failed"));
                     #endif
@@ -309,6 +238,52 @@ void HaMqtt::loop(){
             }
         }
     }   
+}
+void HaMqtt::publishAllSensor(){
+    for (int sensorID=0;sensorID<MAX_SENSORS;sensorID++){
+        if (this->_sensors[sensorID].unique_id != nullptr) {
+            #ifdef DEBUG
+                Serial.print(F("Publish Sensor: "));
+                Serial.print(this->_sensors[sensorID].unique_id);
+                Serial.print(F(" : "));
+                Serial.println(this->_sensors[sensorID].name);
+            #endif
+            this->publishSensor(sensorID);
+        }
+    }
+}
+bool HaMqtt::publishSensor(int sensorID){
+    JsonDocument doc;
+    this->getSensorConfig(doc,sensorID);
+    String topic=String(HA_DISCOVERY_PREFIX)+"/"+String(this->_sensors[sensorID].components)+"/"+this->_deviceInfos.ids+"/"+this->_sensors[sensorID].unique_id+"/config";
+    String paylod;
+    serializeJson(doc, paylod);
+    return this->mqttPublish(topic,paylod);
+}
+bool HaMqtt::mqttPublish(String topic, String paylod){
+    #ifdef DEBUG
+        Serial.println(F("Publish MQTT Request"));
+        Serial.print(F("Topic:"));
+        Serial.println(topic);
+        Serial.print(F("Payload:"));
+        Serial.println(paylod);
+        Serial.print(F("MQTT Request Status: "));
+    #endif
+    if (_mqttConnected){
+        if (this->_mqttClient.publish(topic.c_str(), paylod.c_str(), true)){
+            #ifdef DEBUG
+                Serial.println(F("OK"));
+            #endif
+            return true;
+        }         
+    }
+    /*
+    TODO: build a queue for faild mqtt request
+    */
+    #ifdef DEBUG
+        Serial.println(F("Faild"));
+    #endif 
+    return false;
 }
 void HaMqtt::getSensorConfig(JsonDocument& doc, int sensorID) {
     // Das Document initialisieren und als Objekt ansprechen
