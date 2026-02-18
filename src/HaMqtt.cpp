@@ -261,15 +261,15 @@ bool HaMqtt::publishSensor(int sensorID){
     return this->mqttPublish(topic,paylod);
 }
 bool HaMqtt::mqttPublish(String topic, String paylod){
-    #ifdef DEBUG
-        Serial.println(F("Publish MQTT Request"));
-        Serial.print(F("Topic:"));
-        Serial.println(topic);
-        Serial.print(F("Payload:"));
-        Serial.println(paylod);
-        Serial.print(F("MQTT Request Status: "));
-    #endif
-    if (_mqttConnected){
+     if (this->_mqttConnected){
+        #ifdef DEBUG
+            Serial.println(F("Publish MQTT Request"));
+            Serial.print(F("Topic:"));
+            Serial.println(topic);
+            Serial.print(F("Payload:"));
+            Serial.println(paylod);
+            Serial.print(F("MQTT Request Status: "));
+        #endif
         if (this->_mqttClient.publish(topic.c_str(), paylod.c_str(), true)){
             #ifdef DEBUG
                 Serial.println(F("OK"));
