@@ -3,12 +3,21 @@
 
     
     // Home Assistant MQTT name
-    #define HA_DISCOVERY_PREFIX         "homeassistant"
-    #define DEFAULT_EXPIRE_AFTER 600 // 10 Minuten
+    #define HA_DISCOVERY_PREFIX        "homeassistant"
     
-    // Home Assistant MQTT Discovery Komponenten
-    // Verwendung: "homeassistant/" HA_COMPONENT_TYPE "/node_id/object_id/config"
-
+    // default expire time for sensors
+    #define DEFAULT_EXPIRE_AFTER        600   // 10 Minuten
+    
+    // reconnect interval, if mqtt connect faild
+    #ifndef MQTT_ReCONNECT_INTERVAL
+        #define MQTT_ReCONNECT_INTERVAL 10000 // 10 Sekunden
+    #endif
+    
+    // Home Assistant MQTT Discovery Componenten
+    // Use: "homeassistant/<HA_COMPONENT_TYPE>/<node_id>/<object_id>/config"
+    //  node_id:            most the mac of the device or other unique id
+    //  object_id:          a unique id from the sensor
+    //  HA_COMPONENT_TYPE:  typ of the sensor (se blow)
     #define HA_COMPONENT_ALARM_CONTROL_PANEL "alarm_control_panel"
     #define HA_COMPONENT_BINARY_SENSOR       "binary_sensor"
     #define HA_COMPONENT_BUTTON              "button"
@@ -34,7 +43,7 @@
     #define HA_COMPONENT_WATER_HEATER        "water_heater"
 
     
-    // --- SENSOR DEVICE CLASSES ---
+// Home Assistant Sensor CLASSES 
     #define HA_DEVICE_CLASS_NONE  (char*)NULL // Nutzt den HA Standard
     #define HA_SENS_APPARENT_POWER   "apparent_power"  // VA
     #define HA_SENS_AQI              "aqi"             // Index

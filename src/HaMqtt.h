@@ -7,12 +7,11 @@
     #include <HaKeyValue.h>
     #include <ArduinoJson.h>
 
-    #define MQTT_ReCONNECT_INTERVAL 10000 // 10 Sekunden
-    // Hilfs-Struct für die Connection-Paare
     
+
     struct ConnectionPair {
         String type;  // z.B. "mac", "ip", "zigbee"
-        String value; // Die Adresse/ID
+        String value; // ip address or mac 
     };
 
     struct HADevice {
@@ -28,11 +27,11 @@
         String cu;            // configuration_url: Web-Link zur Config-Seite des ESP
         String via_device;    // Falls das Gerät über eine Bridge verbunden ist
         
-        // Array für bis zu 8 Verbindungen
+        // Array for max 8 connections
         ConnectionPair connections[8];
         uint8_t connectionCount = 0;
 
-        // Methode zum einfachen Hinzufügen von Connections
+        // Method for easily adding connections
         void addConnection(const char* type, const char* value) {
             if (connectionCount < 8) {
                 connections[connectionCount] = {type, value};
@@ -43,8 +42,8 @@
     
     struct HASensor {
         // Identifikation (Pflicht)
-       const char* unique_id;                           // Eindeutige ID (z.B. "sensor_temp_01")
-       const char* name;                                // Anzeigename in HA
+       const char* unique_id;                           // unique ID (z.B. "sensor_temp_01","mac")
+       const char* name;                                // name in HA
        const char* components=HA_COMPONENT_SENSOR;      // paylod Components
 
         // Sensor Details (Optional, leer lassen wenn nicht benötigt)
@@ -92,12 +91,24 @@
             bool setSensorAvailability(const char* unique_id,bool available);
             bool setSensorAvailability(int sensorID,bool available);
 
+            /* get  sensor id for senor uniqued name back
+                Arguments:
+                    const char* uniqued_id : uniqued name of the sendor [3d_dd_ee_3e_21_00_ff]
+                Return:
+                    int: sensor ID, if sensor id not found -1
+            */
+            int getSensorID(const char* unique_id);
+
             bool updateSensorValue(const char* unique_id,const char* value);
             bool updateSensorValue(const char* unique_id,int value);
             bool updateSensorValue(const char* unique_id,float value);
             bool updateSensorValue(int sensorID,const char* value);
             bool updateSensorValue(int sensorID,int value);
             bool updateSensorValue(int sensorID,float value);
+            /* Publish the sensor data to the MQTT Server
+                Arguments
+            */
+            bool publishSensor(int sensorID);
 
             //Device
             void setDeviceName(String device_name){
@@ -116,6 +127,7 @@
             String       _mqtt_user   = "";
             String       _mqtt_pass   = "";
             uint16_t     _mqttBuffer=1024;
+            bool         _mqttConnected =false;
             String _currentMac;
             // Device Vars
             HADevice _deviceInfos;          // Device Data
@@ -135,9 +147,6 @@
             // get sensor config paylod
             void getSensorConfig(JsonDocument& doc,int sensorID);
 
-            // get  sensor id for senor uniqued name back
-            int getSensorID(const char* unique_id);
-            
             // Device information for Home Assistant Discovery
             //String getDeviceJson(HADevice& dev); // Return the Device json
             /*connect to mqtt server using current values, 
@@ -146,6 +155,9 @@
             */
             bool mqttConnect();
             void mqttDisconnect();
+
+            void publishAllSensor();
+            bool mqttPublish(String topic, String paylod);
     
     };
 #endif
