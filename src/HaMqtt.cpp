@@ -268,6 +268,13 @@ bool HaMqtt::mqttPublish(String topic, String paylod){
             Serial.println(topic);
             Serial.print(F("Payload:"));
             Serial.println(paylod);
+            int bufferNeed=topic.length()+paylod.length();
+            if (bufferNeed+40>this->_mqttBuffer){
+                Serial.print(F("WARNING !!!!! Buffer for Mqtt is:"));
+                Serial.print(this->_mqttBuffer);
+                Serial.print(F(" but you need: "));
+                Serial.println(bufferNeed);
+            }
             Serial.print(F("MQTT Request Status: "));
         #endif
         if (this->_mqttClient.publish(topic.c_str(), paylod.c_str(), true)){
@@ -275,13 +282,18 @@ bool HaMqtt::mqttPublish(String topic, String paylod){
                 Serial.println(F("OK"));
             #endif
             return true;
+        }else{
+            #ifdef DEBUG
+                Serial.println(F("Faild"));
+            #endif 
+            return false;
         }         
     }
     /*
     TODO: build a queue for faild mqtt request
     */
     #ifdef DEBUG
-        Serial.println(F("Faild"));
+        Serial.println(F("Publish MQTT Request: Faild MQTT disconnect"));
     #endif 
     return false;
 }
