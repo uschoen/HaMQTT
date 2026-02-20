@@ -1,5 +1,6 @@
 #ifndef HAKEYVALUES_H
     #define HAKEYVALUES_H
+    #include <Arduino.h>
 
     
 // Home Assistant MQTT name
