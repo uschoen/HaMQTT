@@ -21,10 +21,10 @@
             HaMqtt(Client& networkClient,String server, uint16_t port);
             HaMqtt(Client& networkClient,String server, uint16_t port, String user , String pass);
 
-            void begin();
-            void begin(String device_identifier,String deviceName);
+            virtual void begin();
+            virtual void begin(String device_identifier,String deviceName); 
             
-            void loop();
+            virtual void loop();
 
             void addHADevice(const HADevice& device);
 
@@ -70,13 +70,13 @@
            
         
         private:
-            PubSubClient _mqttClient;
-            String       _mqtt_server = "";
-            uint16_t     _mqtt_port   = 1883;
-            String       _mqtt_user   = "";
-            String       _mqtt_pass   = "";
-            uint16_t     _mqttBuffer=1024;
-            bool         _mqttConnected =false;
+            PubSubClient _mqttClient;                   // Mqtt Class
+            String       _mqtt_server   = "";           // Mqtt Server IP
+            uint16_t     _mqtt_port     = 1883;         // Mqtt Port
+            String       _mqtt_user     = "";           // Mqtt User
+            String       _mqtt_pass     = "";           // Mqtt Password
+            uint16_t     _mqttBuffer    = 1024;         // Mqtt Buffer for topic+payload
+            bool         _mqttConnected = false;
             String _currentMac;
             // Device Vars
             HADevice _deviceInfos;          // Device Data
