@@ -1,6 +1,6 @@
 {
   "name": "HaMQTT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Home Assistant MQTT Bibliothek",
   "keywords": "mqtt, home-assistant, automation, Arduino, esp32, esp8266",
   "repository":
