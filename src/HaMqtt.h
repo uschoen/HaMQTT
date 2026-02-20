@@ -9,58 +9,7 @@
 
     
 
-    struct ConnectionPair {
-        String type;  // z.B. "mac", "ip", "zigbee"
-        String value; // ip address or mac 
-    };
 
-    struct HADevice {
-        // Identifikation (Pflicht)
-        String ids;
-        String name;
-        // Optionale Metadaten
-        String mdl;           // model: Modellbezeichnung (z.B. "ESP32-WROOM-32")
-        String mf;            // manufacturer: Hersteller (z.B. "Espressif" oder "Eigenbau")
-        String sw;            // sw_version: Firmware-Version (z.B. "1.2.0")
-        String hw;            // hw_version: Hardware-Revision (z.B. "v2.1")
-        String sa;            // suggested_area: Raumvorschlag (z.B. "Wohnzimmer")
-        String cu;            // configuration_url: Web-Link zur Config-Seite des ESP
-        String via_device;    // Falls das Gerät über eine Bridge verbunden ist
-        
-        // Array for max 8 connections
-        ConnectionPair connections[8];
-        uint8_t connectionCount = 0;
-
-        // Method for easily adding connections
-        void addConnection(const char* type, const char* value) {
-            if (connectionCount < 8) {
-                connections[connectionCount] = {type, value};
-                connectionCount++;
-            }
-        }
-    };
-    
-    struct HASensor {
-        // Identifikation (Pflicht)
-       const char* unique_id;                           // unique ID (z.B. "sensor_temp_01","mac")
-       const char* name;                                // name in HA
-       const char* components=HA_COMPONENT_SENSOR;      // paylod Components
-
-        // Sensor Details (Optional, leer lassen wenn nicht benötigt)
-        const char* dev_cla=nullptr;                    // device_class: z.B. "temperature", "humidity", "battery", "energy"
-        const char* unit_of_meas=nullptr;               // Maßeinheit: z.B. "°C", "%", "kWh"
-        const char* ic=nullptr;                         // icon: z.B. "mdi:thermometer"
-        const char* stat_cla=nullptr;                   // state_class: z.B. "measurement", "total_increasing"
-        
-        // Payload Konfiguration
-        const char* val_tpl=nullptr;                    // value_template: z.B. "{{ value_json.temperature }}"
-        int exp_aft=600;                                // expire_after: Zeit in Sek. bis Sensor "unavailable" wird
-        const char* availability_mode="all";            // default auf all, es müssen alle status felder unter availability online sein
-        //availability_string availability[2];            // topics for availability "topic": "mein_geraet_01/status",
-        
-        // Nummerische Einstellungen
-        int sugg_disp_prec = -1;                        // suggested_display_precision: Nachkommastellen (-1 = ignorieren)
-    };
 
 
 

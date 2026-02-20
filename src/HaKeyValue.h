@@ -2,22 +2,23 @@
     #define HAKEYVALUES_H
 
     
-    // Home Assistant MQTT name
+// Home Assistant MQTT name
     #define HA_DISCOVERY_PREFIX        "homeassistant"
     
-    // default expire time for sensors
+// default expire time for sensors
     #define DEFAULT_EXPIRE_AFTER        600   // 10 Minuten
     
-    // reconnect interval, if mqtt connect faild
+// reconnect interval, if mqtt connect faild
     #ifndef MQTT_ReCONNECT_INTERVAL
         #define MQTT_ReCONNECT_INTERVAL 10000 // 10 Sekunden
     #endif
-    
-    // Home Assistant MQTT Discovery Componenten
-    // Use: "homeassistant/<HA_COMPONENT_TYPE>/<node_id>/<object_id>/config"
-    //  node_id:            most the mac of the device or other unique id
-    //  object_id:          a unique id from the sensor
-    //  HA_COMPONENT_TYPE:  typ of the sensor (se blow)
+
+/*  Home Assistant MQTT Discovery Componenten
+    Use: "homeassistant/<HA_COMPONENT_TYPE>/<node_id>/<object_id>/config"
+    node_id:            most the mac of the device or other unique id
+    object_id:          a unique id from the sensor
+    HA_COMPONENT_TYPE:  typ of the sensor (se blow)
+*/
     #define HA_COMPONENT_ALARM_CONTROL_PANEL "alarm_control_panel"
     #define HA_COMPONENT_BINARY_SENSOR       "binary_sensor"
     #define HA_COMPONENT_BUTTON              "button"
@@ -91,7 +92,7 @@
     #define HA_SENS_WEIGHT           "weight"          // kg, g, lb
     #define HA_SENS_WIND_SPEED       "wind_speed"      // km/h, m/s
 
-    // --- BINARY SENSOR DEVICE CLASSES ---
+// --- BINARY SENSOR DEVICE CLASSES ---
     #define HA_BIN_BATTERY           "battery"         // Low/Normal
     #define HA_BIN_BATTERY_CHARGING  "battery_charging" // Charging/Not
     #define HA_BIN_CARBON_MONOXIDE   "carbon_monoxide" // Danger/Safe
@@ -121,7 +122,7 @@
     #define HA_BIN_VIBRATION         "vibration"       // Detected/Clear
     #define HA_BIN_WINDOW            "window"          // Open/Closed
 
-    // --- SWITCH, COVER & OTHER CLASSES ---
+// --- SWITCH, COVER & OTHER CLASSES ---
     #define HA_SW_OUTLET             "outlet"
     #define HA_SW_SWITCH             "switch"
     #define HA_COV_AWNING            "awning"
@@ -134,5 +135,60 @@
     #define HA_COV_SHADE             "shade"
     #define HA_COV_SHUTTER           "shutter"
     #define HA_COV_WINDOW            "window"
+    
+// Connection Pair contains the mac or ip for the HA Device
+    struct ConnectionPair {
+        String type;  // z.B. "mac", "ip", "zigbee"
+        String value; // ip address or mac 
+    };
+// HA Device struct
+    struct HADevice {
+        // Identifikation (mandatory)
+        String ids;
+        String name;
+        // Metadaten (Optional, leave blank if not required)
+        String mdl;           // model: Modellbezeichnung (z.B. "ESP32-WROOM-32")
+        String mf;            // manufacturer: Hersteller (z.B. "Espressif" oder "Eigenbau")
+        String sw;            // sw_version: Firmware-Version (z.B. "1.2.0")
+        String hw;            // hw_version: Hardware-Revision (z.B. "v2.1")
+        String sa;            // suggested_area: Raumvorschlag (z.B. "Wohnzimmer")
+        String cu;            // configuration_url: Web-Link zur Config-Seite des ESP
+        String via_device;    // Falls das Gerät über eine Bridge verbunden ist
+        
+        // Array for max 8 connections
+        ConnectionPair connections[8];
+        uint8_t connectionCount = 0;
+
+        // Method for easily adding connections
+        void addConnection(const char* type, const char* value) {
+            if (connectionCount < 8) {
+                connections[connectionCount] = {type, value};
+                connectionCount++;
+            }
+        }
+    };
+// HA Sensor    
+    struct HASensor {
+        // Identifikation (mandatory)
+       const char* unique_id;                           // unique ID (z.B. "sensor_temp_01","mac")
+       const char* name;                                // name in HA
+       const char* components=HA_COMPONENT_SENSOR;      // paylod Components
+
+        // Sensor Details (Optional, leave blank if not required)
+        const char* dev_cla=nullptr;                    // device_class: z.B. "temperature", "humidity", "battery", "energy"
+        const char* unit_of_meas=nullptr;               // Maßeinheit: z.B. "°C", "%", "kWh"
+        const char* ic=nullptr;                         // icon: z.B. "mdi:thermometer"
+        const char* stat_cla=nullptr;                   // state_class: z.B. "measurement", "total_increasing"
+        
+        // Payload configuration
+        const char* val_tpl=nullptr;                    // value_template: z.B. "{{ value_json.temperature }}"
+        int exp_aft=600;                                // expire_after: Zeit in Sek. bis Sensor "unavailable" wird
+        const char* availability_mode="all";            // default auf all, es müssen alle status felder unter availability online sein
+                
+        // numeric settings
+        int sugg_disp_prec = -1;                        // suggested_display_precision: Nachkommastellen (-1 = ignorieren)
+    };
+    
+    
 
 #endif
